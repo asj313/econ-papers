@@ -54,6 +54,10 @@ PRIORITY_KEYWORDS = [
 
 # RSS Feeds and sources
 SOURCES = {
+    "NBER Working Papers": {
+        "url": "https://www.nber.org/rss/new.xml",
+        "type": "rss"
+    },
     "VoxEU/CEPR": {
         "url": "https://cepr.org/rss/voxeu/columns.xml",
         "type": "rss"
