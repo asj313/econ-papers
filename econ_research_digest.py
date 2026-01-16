@@ -18,6 +18,7 @@ from typing import Optional
 import re
 import argparse
 import time
+import os
 
 # =============================================================================
 # CONFIGURATION - Edit these to customize
@@ -101,10 +102,93 @@ class Paper:
     date: Optional[datetime]
     relevance_score: int = 0
     matched_keywords: list = None
+    key_finding: str = ""
     
     def __post_init__(self):
         if self.matched_keywords is None:
             self.matched_keywords = []
+
+# =============================================================================
+# CONTENT FETCHING & SUMMARIZATION
+# =============================================================================
+
+def fetch_full_content(url: str) -> str:
+    """Fetch and extract main text content from a paper's page."""
+    try:
+        headers = {'User-Agent': 'Mozilla/5.0 (compatible; research aggregator)'}
+        response = requests.get(url, headers=headers, timeout=10)
+        soup = BeautifulSoup(response.text, 'html.parser')
+        
+        # Remove script, style, nav elements
+        for tag in soup(['script', 'style', 'nav', 'header', 'footer', 'aside']):
+            tag.decompose()
+        
+        # Try common article containers
+        content = None
+        for selector in ['article', '.post-content', '.entry-content', '.article-body', 
+                         '.content', 'main', '.paper-abstract', '.abstract']:
+            content = soup.select_one(selector)
+            if content:
+                break
+        
+        if not content:
+            content = soup.body
+        
+        text = content.get_text(separator=' ', strip=True) if content else ""
+        # Limit to ~3000 chars to keep API costs down
+        return text[:3000]
+    except Exception as e:
+        print(f"    Warning: Could not fetch {url}: {e}")
+        return ""
+
+def summarize_with_claude(title: str, abstract: str, full_content: str) -> str:
+    """Use Claude API to generate a one-sentence key finding."""
+    api_key = os.environ.get('ANTHROPIC_API_KEY')
+    if not api_key:
+        return ""
+    
+    try:
+        prompt = f"""Based on this economics paper, provide ONE sentence (max 30 words) stating the key finding or takeaway. Be specific with numbers/percentages if available. Focus on the "so what" for policymakers.
+
+Title: {title}
+
+Abstract: {abstract}
+
+Content excerpt: {full_content[:2000]}
+
+Key finding (one sentence):"""
+
+        response = requests.post(
+            "https://api.anthropic.com/v1/messages",
+            headers={
+                "x-api-key": api_key,
+                "content-type": "application/json",
+                "anthropic-version": "2023-06-01"
+            },
+            json={
+                "model": "claude-sonnet-4-20250514",
+                "max_tokens": 100,
+                "messages": [{"role": "user", "content": prompt}]
+            },
+            timeout=30
+        )
+        
+        if response.status_code == 200:
+            return response.json()['content'][0]['text'].strip()
+        else:
+            print(f"    API error: {response.status_code}")
+            return ""
+    except Exception as e:
+        print(f"    Summarization error: {e}")
+        return ""
+
+def enrich_paper_with_summary(paper: Paper) -> Paper:
+    """Fetch content and generate summary for a paper."""
+    print(f"    Summarizing: {paper.title[:50]}...")
+    full_content = fetch_full_content(paper.url)
+    paper.key_finding = summarize_with_claude(paper.title, paper.abstract, full_content)
+    time.sleep(0.5)  # Rate limiting
+    return paper
 
 # =============================================================================
 # KEYWORD MATCHING
@@ -332,8 +416,11 @@ def format_paper(paper: Paper) -> str:
 *{paper.source}* | {paper.authors[:60]}{'...' if len(paper.authors) > 60 else ''} | {date_str}
 """
     
-    if paper.abstract:
-        # Truncate abstract nicely
+    if paper.key_finding:
+        output += f"**📌 Key finding:** {paper.key_finding}\n"
+    
+    if paper.abstract and not paper.key_finding:
+        # Only show abstract if we don't have a key finding
         abstract = paper.abstract[:300]
         if len(paper.abstract) > 300:
             abstract = abstract.rsplit(' ', 1)[0] + "..."
@@ -354,13 +441,22 @@ def main():
     parser.add_argument("--days", type=int, default=7, help="Days to look back (default: 7)")
     parser.add_argument("--min-score", type=int, default=1, help="Minimum relevance score (default: 1)")
     parser.add_argument("--output", type=str, default=None, help="Output file path")
+    parser.add_argument("--summarize", type=int, default=15, help="Number of top papers to summarize (default: 15)")
     args = parser.parse_args()
     
     # Fetch and process
     all_papers = fetch_all_papers(days=args.days)
     relevant_papers = filter_and_rank(all_papers, min_score=args.min_score)
     
-    print(f"\nFound {len(relevant_papers)} relevant papers out of {len(all_papers)} total\n")
+    print(f"\nFound {len(relevant_papers)} relevant papers out of {len(all_papers)} total")
+    
+    # Summarize top papers if API key is available
+    if os.environ.get('ANTHROPIC_API_KEY') and args.summarize > 0:
+        print(f"\nGenerating summaries for top {min(args.summarize, len(relevant_papers))} papers...")
+        for i, paper in enumerate(relevant_papers[:args.summarize]):
+            relevant_papers[i] = enrich_paper_with_summary(paper)
+    else:
+        print("\nNo ANTHROPIC_API_KEY found, skipping summaries")
     
     # Generate output
     markdown = generate_markdown(relevant_papers, args.days)
@@ -375,7 +471,7 @@ def main():
     with open(output_path, "w") as f:
         f.write(markdown)
     
-    print(f"Digest saved to: {output_path}")
+    print(f"\nDigest saved to: {output_path}")
     
     # Print preview
     print("\n" + "="*60)
