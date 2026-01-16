@@ -25,31 +25,66 @@ import os
 # =============================================================================
 
 # Keywords relevant to Groundwork's priorities (case-insensitive)
+# Organized by policy area for easy toggling
+
 PRIORITY_KEYWORDS = [
-    # Corporate power & pricing
+    # === CORPORATE POWER & PRICING ===
     "price", "pricing", "markup", "profit", "corporate", "concentration", 
     "monopoly", "antitrust", "market power", "oligopoly", "merger",
-    "gouging", "inflation",
+    "gouging", "buyback", "stock buyback", "executive compensation",
+    "shareholder", "private equity", "financialization", "ceo pay",
     
-    # Housing
+    # === INFLATION & COSTS ===
+    "inflation", "cost of living", "consumer price", "input cost",
+    
+    # === HOUSING ===
     "housing", "rent", "mortgage", "landlord", "eviction", "tenant",
     "homeowner", "affordability", "real estate", "financialization",
+    "housing cost", "rental", "homeownership",
     
-    # Labor & wages
+    # === LABOR & WAGES ===
     "wage", "labor", "worker", "employment", "unemployment", "union",
     "minimum wage", "gig economy", "collective bargaining", "strike",
+    "working class", "low-wage", "wage theft", "labor market",
     
-    # Inequality & distribution
+    # === INEQUALITY & DISTRIBUTION ===
     "inequality", "wealth", "income distribution", "poverty", "mobility",
     "racial", "gender gap", "disparity", "progressive",
+    "wealth gap", "income gap", "economic mobility",
     
-    # Consumer & household
-    "consumer", "household", "debt", "credit", "family", "childcare",
-    "healthcare cost", "food price", "grocery",
+    # === CONSUMER & HOUSEHOLD ===
+    "consumer", "household", "debt", "credit", "family",
+    "food price", "grocery", "medical debt", "student debt",
     
-    # Policy
+    # === HEALTHCARE ===
+    "healthcare", "health care", "drug price", "pharmaceutical",
+    "insurance premium", "medicaid", "medicare", "hospital",
+    "out-of-pocket", "prescription", "health cost", "uninsured",
+    
+    # === CHILDCARE & FAMILY ===
+    "childcare", "child care", "paid leave", "family leave", "parental",
+    "caregiving", "elder care", "dependent care", "preschool",
+    
+    # === MACRO / FED / MONETARY ===
+    "federal reserve", "monetary policy", "interest rate", "quantitative",
+    "recession", "gdp", "economic growth", "fiscal policy", "stimulus",
+    "fomc", "central bank", "liquidity",
+    
+    # === POLICY & REGULATION ===
     "tax", "fiscal", "subsidy", "regulation", "enforcement", "antitrust",
-    "competition policy", "industrial policy",
+    "competition policy", "industrial policy", "public investment",
+    
+    # === TRADE & SUPPLY CHAIN ===
+    "tariff", "trade policy", "supply chain", "reshoring", "import",
+    "export", "offshoring", "trade deficit",
+    
+    # === ENERGY & CLIMATE ===
+    "utility", "electricity", "energy cost", "public power", "data center",
+    "renewable", "fossil fuel", "carbon", "climate",
+    
+    # === TECH & AI ECONOMY ===
+    "algorithmic", "surveillance pricing", "platform", "gig economy",
+    "artificial intelligence", "automation", "tech monopoly",
 ]
 
 # RSS Feeds and sources
