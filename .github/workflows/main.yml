@@ -24,6 +24,27 @@ jobs:
       - name: Generate digest
         run: python econ_research_digest.py --days 7 --output digest.md
       
+      - name: Convert to HTML
+        run: |
+          cat << 'EOF' > digest.html
+          <html>
+          <head>
+          <style>
+            body { font-family: -apple-system, Arial, sans-serif; max-width: 700px; margin: 0 auto; padding: 20px; color: #262827; }
+            h1 { color: #174D56; border-bottom: 2px solid #589EAE; padding-bottom: 10px; }
+            h2 { color: #174D56; margin-top: 30px; }
+            h3 { color: #589EAE; }
+            a { color: #589EAE; }
+            blockquote { border-left: 3px solid #A9CAD2; margin: 10px 0; padding-left: 15px; color: #555; font-size: 14px; }
+            hr { border: none; border-top: 1px solid #A9CAD2; margin: 20px 0; }
+            .paper { margin-bottom: 25px; }
+          </style>
+          </head>
+          <body>
+          EOF
+          pandoc digest.md -t html >> digest.html
+          echo "</body></html>" >> digest.html
+      
       - name: Get current date
         id: date
         run: echo "date=$(date +'%B %d, %Y')" >> $GITHUB_OUTPUT
@@ -38,9 +59,7 @@ jobs:
           subject: "📚 Econ Research Digest - ${{ steps.date.outputs.date }}"
           to: ${{ secrets.EMAIL_TO }}
           from: ${{ secrets.EMAIL_USERNAME }}
-          body: "Weekly economics research digest attached."
-          attachments: digest.md
-          convert_markdown: true
+          html_body: file://digest.html
       
       - name: Upload digest as artifact
         uses: actions/upload-artifact@v4
