@@ -19,31 +19,41 @@ jobs:
           python-version: '3.11'
       
       - name: Install dependencies
-        run: pip install feedparser requests beautifulsoup4
+        run: pip install feedparser requests beautifulsoup4 markdown
       
       - name: Generate digest
         run: python econ_research_digest.py --days 7 --output digest.md
       
       - name: Convert to HTML
         run: |
-          cat << 'EOF' > digest.html
-          <html>
+          python << 'EOF'
+          import markdown
+          
+          with open('digest.md', 'r') as f:
+              md_content = f.read()
+          
+          html_body = markdown.markdown(md_content)
+          
+          html = f"""<html>
           <head>
           <style>
-            body { font-family: -apple-system, Arial, sans-serif; max-width: 700px; margin: 0 auto; padding: 20px; color: #262827; }
-            h1 { color: #174D56; border-bottom: 2px solid #589EAE; padding-bottom: 10px; }
-            h2 { color: #174D56; margin-top: 30px; }
-            h3 { color: #589EAE; }
-            a { color: #589EAE; }
-            blockquote { border-left: 3px solid #A9CAD2; margin: 10px 0; padding-left: 15px; color: #555; font-size: 14px; }
-            hr { border: none; border-top: 1px solid #A9CAD2; margin: 20px 0; }
-            .paper { margin-bottom: 25px; }
+            body {{ font-family: -apple-system, Arial, sans-serif; max-width: 700px; margin: 0 auto; padding: 20px; color: #262827; }}
+            h1 {{ color: #174D56; border-bottom: 2px solid #589EAE; padding-bottom: 10px; }}
+            h2 {{ color: #174D56; margin-top: 30px; }}
+            h3 {{ color: #589EAE; }}
+            a {{ color: #589EAE; }}
+            blockquote {{ border-left: 3px solid #A9CAD2; margin: 10px 0; padding-left: 15px; color: #555; font-size: 14px; }}
+            hr {{ border: none; border-top: 1px solid #A9CAD2; margin: 20px 0; }}
           </style>
           </head>
           <body>
+          {html_body}
+          </body>
+          </html>"""
+          
+          with open('digest.html', 'w') as f:
+              f.write(html)
           EOF
-          pandoc digest.md -t html >> digest.html
-          echo "</body></html>" >> digest.html
       
       - name: Get current date
         id: date
