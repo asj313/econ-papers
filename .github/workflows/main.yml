@@ -22,7 +22,9 @@ jobs:
         run: pip install feedparser requests beautifulsoup4 markdown
       
       - name: Generate digest
-        run: python econ_research_digest.py --days 7 --output digest.md
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: python econ_research_digest.py --days 7 --output digest.md --summarize 15
       
       - name: Convert to HTML
         run: |
